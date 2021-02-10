@@ -1,0 +1,36 @@
+---
+title: "Homework 03"
+author: "Team name: member 1, member 2, member 3, ..."
+date: ""
+output: html_document
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      comment = "#>", highlight = TRUE,
+                      fig.align = "center")
+```
+
+## Packages
+
+```{r message=FALSE}
+library(tidyverse)
+library(janitor)
+library(jsonlite)
+```
+
+## Data
+
+```{r}
+events_json <- read_json("data/events_england.json")
+```
+
+## Tasks
+
+#### Task 1
+
+```{r task_1}
+
+```
+
+
