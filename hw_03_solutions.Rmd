@@ -1,0 +1,162 @@
+---
+title: "Homework 03 Solutions"
+author: ""
+date: ""
+output: html_document
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      comment = "#>", highlight = TRUE,
+                      fig.align = "center")
+```
+
+## Packages
+
+```{r message=FALSE}
+library(tidyverse)
+library(janitor)
+library(jsonlite)
+```
+
+## Data
+
+```{r}
+events_json <- read_json("data/events_england.json")
+```
+
+## Tasks
+
+#### Task 1
+
+```{r task_1_helpers}
+set_start_position_names <- function(x, y) {
+  names(x$positions[[1]]) <- y
+  x
+}
+
+set_tag_names <- function(x) {
+  if (!is_empty(x$tags)) {
+    names(x$tags) <- str_c("id_", 1:length(x$tags))
+  }
+  x
+}
+```
+
+```{r task_1}
+events <- events_json %>%
+  modify(set_start_position_names, c("start_y", "start_x")) %>%
+  modify(set_tag_names) %>%
+  map_df(unlist) %>%
+  clean_names() %>%
+  rename(
+    start_y = positions_start_y,
+    start_x = positions_start_x,
+    end_y   = positions_y,
+    end_x   = positions_x
+  ) %>% 
+  select(id, match_id, match_period, team_id, event_id, event_name,
+         sub_event_id, sub_event_name, player_id, event_sec,
+         start_x, start_y, end_x, end_y) %>% 
+  mutate(event_sec = as.double(event_sec)) %>% 
+  mutate(across(start_x:end_y, as.integer))
+```
+
+```{r}
+glimpse(events)
+```
+
+#### Task 2
+
+`NA` check:
+
+```{r}
+map_dbl(events, ~ sum(is.na(.)))
+```
+
+No negatives check:
+
+```{r}
+events %>% 
+  select(where(is.numeric)) %>% 
+  map_dbl(~ sum(. < 0))
+```
+
+Empty character check:
+
+```{r}
+events %>% 
+  select(where(is.character)) %>% 
+  map_dbl(~ sum(. == "")) %>% 
+  {.[. > 0]}
+```
+
+#### Task 3
+
+```{r}
+events <- events %>% 
+  mutate(across(.cols = where(is.character), factor)) %>% 
+  mutate(match_period = ordered(match_period))
+```
+
+#### Task 4
+
+```{r}
+events <- events %>% 
+  mutate(across(.cols = ends_with("_x"), ~ . / 100 * 105),
+         across(.cols = ends_with("_y"), ~ . / 100 * 68))
+```
+
+#### Task 5
+
+```{r}
+events <- events %>% 
+  mutate(team_name = if_else(team_id == "1609", "Arsenal", "Leicester City"))
+```
+
+#### Task 6
+
+```{r}
+events %>% 
+  count(team_name, match_period, event_name)
+```
+
+#### Task 7
+
+```{r}
+events %>% 
+  filter(event_name == "Pass") %>% 
+  mutate(pass_direction = if_else(end_x > start_x, "east", "west")) %>% 
+  select(team_name, start_x:end_y, pass_direction) %>% 
+  mutate(pass_distance = sqrt((end_x - start_x) ^ 2 + (end_y - start_y) ^ 2)) %>% 
+  group_by(team_name, pass_direction) %>% 
+  summarise(adp = mean(pass_distance, na.rm = TRUE),
+            mdp = median(pass_distance, na.rm = TRUE),
+            .groups = "drop")
+```
+
+#### Task 8
+
+Answers will vary.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
